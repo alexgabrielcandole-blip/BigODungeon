@@ -7,7 +7,7 @@ public partial class Form1 : Form, IGameUI
 {
     private const int TotalFloors = 5;
     private readonly OpCounter _counter = new();
-    private readonly List<IFloor> _floors = new List<IFloor> { new Floor1() };
+    private readonly List<IFloor> _floors = new List<IFloor> { new Floor1(), new Floor2() };
     private int _floorIndex = 0;
     private string _floorHeader = ""; // "Floor 1 of 5 - The Vault"
 
@@ -53,6 +53,12 @@ public partial class Form1 : Form, IGameUI
         lblOptimal.Text = steps?.ToString() ?? "-";
     }
 
+    // Stamina bar (0-100); values outside the range are clamped
+    public void SetStamina(int value)
+    {
+        prgStamina.Value = Math.Clamp(value, prgStamina.Minimum, prgStamina.Maximum);
+    }
+
     public void FloorCleared()
     {
         SetNextEnabled(true);
@@ -75,6 +81,7 @@ public partial class Form1 : Form, IGameUI
         rtbStory.Clear();
         _counter.Reset();
         SetOptimal(null);
+        SetStamina(100);                   // every floor starts with full stamina
 
         _floorHeader = $"Floor {index + 1} of {TotalFloors} - {floor.Title}";
         lblFloor.Text = _floorHeader;
@@ -125,7 +132,7 @@ public partial class Form1 : Form, IGameUI
         }
         else
         {
-            Log("Floors 2-5 aren't built yet. They're coming in the next rounds.", Color.Orange);
+            Log("Floors 3-5 aren't built yet. They're coming in the next rounds.", Color.Orange);
         }
         txtInput.Focus();
     }
