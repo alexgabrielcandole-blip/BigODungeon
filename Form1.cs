@@ -3,83 +3,130 @@ using System.Windows.Forms;
 
 namespace BigODungeon;
 
-public partial class Form1 : Form
+public partial class Form1 : Form, IGameUI
 {
-    private int _testOps = 0; // TEMP: layout test only
+    private const int TotalFloors = 5;
+    private readonly OpCounter _counter = new();
+    private readonly List<IFloor> _floors = new List<IFloor> { new Floor1() };
+    private int _floorIndex = 0;
+    private string _floorHeader = ""; // "Floor 1 of 5 - The Vault"
 
     public Form1()
     {
         InitializeComponent();
+        rtbStory.HideSelection = false;    // lets the story box auto-scroll to the newest line
+        _counter.Changed += n => lblOps.Text = n.ToString(); // live step counter
     }
 
-    // Appends one colored line to the story box (we'll reuse this everywhere)
-    private void Log(string text, Color color)
+    // ================= IGameUI (what floors can ask us to do) =================
+
+    // Appends one colored line to the story box and scrolls to it
+    public void Log(string text, Color color)
     {
         rtbStory.SelectionStart = rtbStory.TextLength;
+        rtbStory.SelectionLength = 0;
         rtbStory.SelectionColor = color;
         rtbStory.AppendText(text + Environment.NewLine);
+        rtbStory.SelectionStart = rtbStory.TextLength;
         rtbStory.ScrollToCaret();
     }
 
-    // Adds a styled choice button above the input row (reused by every floor)
-    private Button AddActionButton(string text, EventHandler onClick)
+    public void ClearStory()
     {
-        var b = new Button
-        {
-            Text = text,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            MinimumSize = new Size(110, 38),
-            Padding = new Padding(8, 0, 8, 0),
-            Margin = new Padding(0, 0, 8, 0),
-            FlatStyle = FlatStyle.Flat,
-            BackColor = Color.FromArgb(70, 70, 100),
-            ForeColor = Color.White,
-            Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-            UseVisualStyleBackColor = false
-        };
-        b.FlatAppearance.BorderColor = Color.FromArgb(120, 120, 160);
-        b.Click += onClick;
-        flowActions.Controls.Add(b);
-        return b;
+        rtbStory.Clear();
     }
 
-    // Removes all choice buttons (call this when a room changes)
-    private void ClearActions()
+    // The yellow "what to type now" bar
+    public void SetTask(string text)
     {
-        foreach (Control c in flowActions.Controls.Cast<Control>().ToList())
-        {
-            flowActions.Controls.Remove(c);
-            c.Dispose();
-        }
+        lblTask.Text = "TASK:  " + text;
     }
+
+    // Top-right header: floor name + current room
+    public void SetRoom(string room)
+    {
+        lblFloor.Text = $"{_floorHeader}  |  {room}";
+    }
+
+    public void SetOptimal(int? steps)
+    {
+        lblOptimal.Text = steps?.ToString() ?? "-";
+    }
+
+    public void FloorCleared()
+    {
+        SetNextEnabled(true);
+    }
+
+    // ================= Helpers =================
+
+    // "Next Floor" is gray until the floor is cleared
+    private void SetNextEnabled(bool enabled)
+    {
+        btnNext.Enabled = enabled;
+        btnNext.BackColor = enabled ? Color.FromArgb(60, 140, 80) : Color.FromArgb(60, 60, 72);
+    }
+
+    private void StartFloor(int index)
+    {
+        IFloor floor = _floors[index];
+
+        SetNextEnabled(false);
+        rtbStory.Clear();
+        _counter.Reset();
+        SetOptimal(null);
+
+        _floorHeader = $"Floor {index + 1} of {TotalFloors} - {floor.Title}";
+        lblFloor.Text = _floorHeader;
+        lblBigO.Text = floor.BigO;
+        SetTask("Read the story above, then follow the instructions here.");
+
+        floor.Start(this, _counter);
+        txtInput.Focus();
+    }
+
+    // ================= Event handlers =================
 
     private void Form1_Load(object? sender, EventArgs e)
     {
-        Log("Welcome to Dungeon Descent.", Color.Gold);
-        Log("(Layout test) Type something and press Submit or Enter.", Color.Gainsboro);
-
-        // TEMP: shows that action buttons can be added at runtime
-        for (int i = 1; i <= 3; i++)
-        {
-            int n = i;
-            AddActionButton($"Choice {n}", (s, ev) => Log($"You picked Choice {n}.", Color.Khaki));
-        }
+        StartFloor(0);
     }
 
+    // Runs when the player presses Enter or clicks Submit
     private void btnSubmit_Click(object? sender, EventArgs e)
     {
-        // TEMP: bumps the counter and drains stamina to test the side panel
-        _testOps++;
-        lblOps.Text = _testOps.ToString();
-        prgStamina.Value = Math.Max(0, 100 - _testOps * 10);
-        Log($"> {txtInput.Text}", Color.LightGreen);
+        string text = txtInput.Text.Trim();
         txtInput.Clear();
         txtInput.Focus();
+
+        if (text.Length == 0) return;
+
+        Log($"> {text}", Color.LightGreen);
+
+        // "next" works at any time, but only does something once the floor is cleared
+        if (text.Equals("next", StringComparison.OrdinalIgnoreCase))
+        {
+            if (btnNext.Enabled)
+                btnNext_Click(null, EventArgs.Empty);
+            else
+                Log("  You can't go to the next floor yet. Finish this floor first.", Color.Orange);
+            return;
+        }
+
+        _floors[_floorIndex].HandleInput(text);
     }
 
     private void btnNext_Click(object? sender, EventArgs e)
     {
-        Log("(Next Floor clicked - not wired yet)", Color.Orange);
+        if (_floorIndex + 1 < _floors.Count)
+        {
+            _floorIndex++;
+            StartFloor(_floorIndex);
+        }
+        else
+        {
+            Log("Floors 2-5 aren't built yet. They're coming in the next rounds.", Color.Orange);
+        }
+        txtInput.Focus();
     }
 }

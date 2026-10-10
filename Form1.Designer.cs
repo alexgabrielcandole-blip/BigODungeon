@@ -34,21 +34,19 @@ namespace BigODungeon
             lblOptimal = new Label();
             lblStaminaCaption = new Label();
             prgStamina = new ProgressBar();
-            pnlBottom = new Panel();
+            lblTask = new Label();
             tlpInput = new TableLayoutPanel();
             lblPrompt = new Label();
             txtInput = new TextBox();
             btnSubmit = new Button();
             btnNext = new Button();
-            flowActions = new FlowLayoutPanel();
             tlpRoot.SuspendLayout();
             pnlHeader.SuspendLayout();
             tlpSide.SuspendLayout();
-            pnlBottom.SuspendLayout();
             tlpInput.SuspendLayout();
             SuspendLayout();
 
-            // tlpRoot: 2 columns x 3 rows (header / main / bottom)
+            // tlpRoot: 2 columns x 4 rows (header / story+side / task bar / input row)
             tlpRoot.BackColor = Color.FromArgb(24, 24, 32);
             tlpRoot.ColumnCount = 2;
             tlpRoot.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
@@ -56,19 +54,22 @@ namespace BigODungeon
             tlpRoot.Controls.Add(pnlHeader, 0, 0);
             tlpRoot.Controls.Add(rtbStory, 0, 1);
             tlpRoot.Controls.Add(tlpSide, 1, 1);
-            tlpRoot.Controls.Add(pnlBottom, 0, 2);
+            tlpRoot.Controls.Add(lblTask, 0, 2);
+            tlpRoot.Controls.Add(tlpInput, 0, 3);
             tlpRoot.Dock = DockStyle.Fill;
             tlpRoot.Name = "tlpRoot";
             tlpRoot.Padding = new Padding(12);
-            tlpRoot.RowCount = 3;
+            tlpRoot.RowCount = 4;
             tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));
             tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 120F));
+            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));
+            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 64F));
             tlpRoot.SetColumnSpan(pnlHeader, 2);
-            tlpRoot.SetColumnSpan(pnlBottom, 2);
+            tlpRoot.SetColumnSpan(lblTask, 2);
+            tlpRoot.SetColumnSpan(tlpInput, 2);
             tlpRoot.TabIndex = 0;
 
-            // pnlHeader: title (left) + floor info (right)
+            // pnlHeader: title (left) + floor/room info (right)
             pnlHeader.Controls.Add(lblFloor);
             pnlHeader.Controls.Add(lblTitle);
             pnlHeader.Dock = DockStyle.Fill;
@@ -83,13 +84,13 @@ namespace BigODungeon
             lblTitle.TextAlign = ContentAlignment.MiddleLeft;
 
             lblFloor.Dock = DockStyle.Fill;
-            lblFloor.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            lblFloor.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
             lblFloor.ForeColor = Color.Gainsboro;
             lblFloor.Name = "lblFloor";
             lblFloor.Text = "Floor 1 of 5";
             lblFloor.TextAlign = ContentAlignment.MiddleRight;
 
-            // rtbStory: main text area (all narration goes here)
+            // rtbStory: main text area
             rtbStory.BackColor = Color.FromArgb(14, 14, 20);
             rtbStory.BorderStyle = BorderStyle.None;
             rtbStory.Dock = DockStyle.Fill;
@@ -100,7 +101,7 @@ namespace BigODungeon
             rtbStory.ReadOnly = true;
             rtbStory.TabStop = false;
 
-            // tlpSide: Big-O label, operation counter, optimal steps, stamina
+            // tlpSide: Big-O label, step counter, best possible steps, stamina
             tlpSide.BackColor = Color.FromArgb(34, 34, 48);
             tlpSide.ColumnCount = 1;
             tlpSide.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
@@ -140,7 +141,7 @@ namespace BigODungeon
             lblOpsCaption.ForeColor = Color.Silver;
             lblOpsCaption.Margin = new Padding(3, 12, 3, 0);
             lblOpsCaption.Name = "lblOpsCaption";
-            lblOpsCaption.Text = "OPERATIONS (YOUR STEPS)";
+            lblOpsCaption.Text = "STEPS (WORK DONE)";
 
             lblOps.AutoSize = true;
             lblOps.Dock = DockStyle.Fill;
@@ -155,7 +156,7 @@ namespace BigODungeon
             lblOptimalCaption.ForeColor = Color.Silver;
             lblOptimalCaption.Margin = new Padding(3, 12, 3, 0);
             lblOptimalCaption.Name = "lblOptimalCaption";
-            lblOptimalCaption.Text = "OPTIMAL STEPS";
+            lblOptimalCaption.Text = "BEST POSSIBLE STEPS";
 
             lblOptimal.AutoSize = true;
             lblOptimal.Dock = DockStyle.Fill;
@@ -180,19 +181,18 @@ namespace BigODungeon
             prgStamina.Style = ProgressBarStyle.Continuous;
             prgStamina.Value = 100;
 
-            // pnlBottom: dynamic action buttons (top) + input row (fill)
-            pnlBottom.Controls.Add(tlpInput);
-            pnlBottom.Controls.Add(flowActions);
-            pnlBottom.Dock = DockStyle.Fill;
-            pnlBottom.Margin = new Padding(0, 10, 0, 0);
-            pnlBottom.Name = "pnlBottom";
+            // lblTask: the yellow "what to type now" bar (right above the input row)
+            lblTask.BackColor = Color.FromArgb(40, 52, 80);
+            lblTask.Dock = DockStyle.Fill;
+            lblTask.Font = new Font("Segoe UI", 11.5F, FontStyle.Bold);
+            lblTask.ForeColor = Color.Gold;
+            lblTask.Margin = new Padding(0, 8, 0, 0);
+            lblTask.Name = "lblTask";
+            lblTask.Padding = new Padding(12, 0, 0, 0);
+            lblTask.Text = "TASK:  Read the story above.";
+            lblTask.TextAlign = ContentAlignment.MiddleLeft;
 
-            flowActions.Dock = DockStyle.Top;
-            flowActions.Height = 52;
-            flowActions.Name = "flowActions";
-            flowActions.WrapContents = false;
-
-            // tlpInput: [Your move:] [textbox.........] [Submit] [Next Floor]
+            // tlpInput: [Type here:] [textbox.........] [Submit] [Next Floor]
             tlpInput.ColumnCount = 4;
             tlpInput.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90F));
             tlpInput.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
@@ -203,6 +203,7 @@ namespace BigODungeon
             tlpInput.Controls.Add(btnSubmit, 2, 0);
             tlpInput.Controls.Add(btnNext, 3, 0);
             tlpInput.Dock = DockStyle.Fill;
+            tlpInput.Margin = new Padding(0, 6, 0, 0);
             tlpInput.Name = "tlpInput";
             tlpInput.RowCount = 1;
             tlpInput.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
@@ -211,7 +212,7 @@ namespace BigODungeon
             lblPrompt.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             lblPrompt.ForeColor = Color.Gainsboro;
             lblPrompt.Name = "lblPrompt";
-            lblPrompt.Text = "Your move:";
+            lblPrompt.Text = "Type here:";
             lblPrompt.TextAlign = ContentAlignment.MiddleLeft;
 
             txtInput.Anchor = AnchorStyles.Left | AnchorStyles.Right;
@@ -258,7 +259,6 @@ namespace BigODungeon
 
             tlpInput.ResumeLayout(false);
             tlpInput.PerformLayout();
-            pnlBottom.ResumeLayout(false);
             tlpSide.ResumeLayout(false);
             tlpSide.PerformLayout();
             pnlHeader.ResumeLayout(false);
@@ -283,8 +283,7 @@ namespace BigODungeon
         private Label lblOptimal;
         private Label lblStaminaCaption;
         private ProgressBar prgStamina;
-        private Panel pnlBottom;
-        private FlowLayoutPanel flowActions;
+        private Label lblTask;
         private TableLayoutPanel tlpInput;
         private Label lblPrompt;
         private TextBox txtInput;
